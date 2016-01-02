@@ -1,4 +1,27 @@
 <resources>
     <string name="app_name">Currency Converter</string>
     <string name="action_settings">Settings</string>
+    <string name="convertFrom">convert From</string>
+    <string name="convertTo">convert To</string>
+    <string name="resultStatement">Exchange Rate is </string>
+    <string name="SpinnerFromTitle">Select Input Currency</string>
+    <string name="SpinnerToTitle">Select Output Currency</string>
+
+    <string-array name="name">
+        <item >Indian Rupee</item>
+        <item >US Dollar</item>
+        <item >European Union Euro</item>
+        <item >Canadian Dollar</item>
+        <item >Australian Dollar</item>
+        <item >Singapore Dollar</item>
+    </string-array>
+    <string-array name="value">
+        <item >INR</item>
+        <item >USD</item>
+        <item >EUR</item>
+        <item >CAD</item>
+        <item >AUD</item>
+        <item >SGD</item>
+    </string-array>
+
 </resources>

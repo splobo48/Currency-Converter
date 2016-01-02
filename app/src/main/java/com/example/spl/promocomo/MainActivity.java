@@ -5,7 +5,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
+//import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -14,7 +14,13 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -23,34 +29,63 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
 
 public class MainActivity extends AppCompatActivity {
+
     TextView textElement;
-    TextView textElement2;
+    TextView textElementResult;
+    TextView convertFrom;
+    TextView convertTo;
     String DEBUG_TAG ="hiiiii";
     String QUERYTAG = "query";
     String RESULTSTAG="results";
     String RATETAG="rate";
     Double ExchangeRate = 0.00;
     String str = "";
-    static String response1 ="";
+    int from;
+    int to;
+    String[] value;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        textElement = (TextView) findViewById(R.id.textView);
-        textElement2 = (TextView) findViewById(R.id.textView2);
-        textElement.setMovementMethod(new ScrollingMovementMethod());
-        textElement.setText("click on the button below to find USD INR EXCHANGE RATE"); //leave this line to assign a specific text
-        //textElement.setText(R.string.my_love_text); //leave this line to assign a string resource
 
+        textElement = (TextView) findViewById(R.id.textView);
+        textElementResult = (TextView) findViewById(R.id.textView2);
+        textElement.setMovementMethod(new ScrollingMovementMethod());
+        textElement.setText("click on the button below to find USD INR EXCHANGE RATE");
+        convertFrom = (TextView) findViewById(R.id.convertFrom);
+        convertTo = (TextView) findViewById(R.id.convertTo);
+        value  = getResources().getStringArray(R.array.value);
+
+
+        //
+        //using spinner
+        Spinner spinnerFrom = (Spinner) findViewById(R.id.spinnerFrom);
+        Spinner spinnerTo = (Spinner) findViewById(R.id.spinnerTo);
+        // Create an ArrayAdapter using the string array and a default spinner layout
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,R.array.name, android.R.layout.simple_spinner_item);
+        // Specify the layout to use when the list of choices appears
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        // Apply the adapter to the spinner
+        spinnerFrom.setAdapter(adapter);
+        spinnerFrom.setOnItemSelectedListener(new mySpinnerListener(1));
+        spinnerTo.setAdapter(adapter);
+        spinnerTo.setOnItemSelectedListener(new mySpinnerListener(2));
+
+
+
+
+
+
+
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
 
 
        /* FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -61,11 +96,19 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });*/
+
+
     }
 
+    // function for Convert Button
     public void myClickHandler(View view) {
-
-        String stringUrl = "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20yahoo.finance.xchange%20where%20pair%20in%20%28%22usdinr%22%29&format=json&diagnostics=true&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys&callback=";
+        textElementResult.setText("Loading ...");
+        InputMethodManager inputMethodManager= (InputMethodManager)
+                getSystemService(Context.INPUT_METHOD_SERVICE);
+        inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(),InputMethodManager.HIDE_NOT_ALWAYS);
+        String currencyFrom = value[from];      //convertFrom.getText().toString();
+        String currencyTo = value[to];          //.getText().toString();
+        String stringUrl = "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20yahoo.finance.xchange%20where%20pair%20in%20%28%22"+currencyFrom+currencyTo+"%22%29&format=json&diagnostics=true&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys&callback=";
         ConnectivityManager connMgr = (ConnectivityManager)
                 getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
@@ -79,7 +122,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    //AsynchronousT
     private class DownloadWebpageTask extends AsyncTask<String, Void, String> {
+
         @Override
         protected String doInBackground(String... urls) {
 
@@ -90,18 +135,20 @@ public class MainActivity extends AppCompatActivity {
                 return "Unable to retrieve web page. URL may be invalid.";
             }
         }
+
         // onPostExecute displays the results of the AsyncTask.
         @Override
         protected void onPostExecute(String result) {
+
             textElement.setText(result);
-            String str=" initial";
             try {
                 JSONObject mainObj = new JSONObject(result);
                 JSONObject queryObj= mainObj.getJSONObject(QUERYTAG);
                 JSONObject resultsObj= queryObj.getJSONObject(RESULTSTAG);
                 JSONObject rateObj= resultsObj.getJSONObject(RATETAG);
                 ExchangeRate = rateObj.getDouble("Rate");
-                textElement2.setText("Exchange Rate is "+ ExchangeRate);
+                textElementResult.setText(ExchangeRate.toString());
+
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -111,13 +158,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // Given a URL, establishes an HttpUrlConnection and retrieves
-// the web page content as a InputStream, which it returns as
-// a string.
+    // the web page content as a InputStream, which it returns as
+    // a string.
     private String downloadUrl(String myurl) throws IOException {
         InputStream is = null;
         // Only display the first 500 characters of the retrieved
         // web page content.
         int len = 1259;
+
+        String response1 ="";
 
         try {
             URL url = new URL(myurl);
@@ -137,10 +186,10 @@ public class MainActivity extends AppCompatActivity {
             while ((line = br.readLine()) != null) {
                 response1 += line;
             }
-            // Convert the InputStream into a string
-           // String contentAsString = readIt(is, len);
 
+            //log the details
             Log.d(DEBUG_TAG, "The response is: " + response1);
+
             //return contentAsString;
             return response1;
 
@@ -154,6 +203,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+
+    public void infoButtonPressed(View view) {
+        textElement.setText("info button pressed");
+
+    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -174,6 +228,36 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    class mySpinnerListener implements Spinner.OnItemSelectedListener
+    {
+        int ide;
+        mySpinnerListener(int i)
+        {
+            ide =i;
+        }
+        @Override
+        public void onItemSelected(AdapterView parent, View v, int position,
+                                   long id) {
+            // TODO Auto-generated method stub
+            Toast.makeText(parent.getContext(),
+                    parent.getItemAtPosition(position).toString(), Toast.LENGTH_LONG).show();
+            String[] tab_names = getResources().getStringArray(R.array.value);
+            String currencyCode=tab_names[0];
+            if(ide == 1)
+                from = position;
+            else if(ide == 2)
+                to = position;
+            textElementResult.setText("Loading ..."+ value[from]+value[to]);
+        }
+
+        @Override
+        public void onNothingSelected(AdapterView parent) {
+            // TODO Auto-generated method stub
+            // Do nothing.
+        }
+
     }
 
 
