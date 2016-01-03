@@ -18,6 +18,7 @@ import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -32,13 +33,13 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-
 public class MainActivity extends AppCompatActivity {
 
     TextView textElement;
     TextView textElementResult;
     TextView convertFrom;
     TextView convertTo;
+    ImageView infoButton;
     String DEBUG_TAG ="hiiiii";
     String QUERYTAG = "query";
     String RESULTSTAG="results";
@@ -59,11 +60,10 @@ public class MainActivity extends AppCompatActivity {
         textElement = (TextView) findViewById(R.id.textView);
         textElementResult = (TextView) findViewById(R.id.textView2);
         textElement.setMovementMethod(new ScrollingMovementMethod());
-        textElement.setText("click on the button below to find USD INR EXCHANGE RATE");
-        convertFrom = (TextView) findViewById(R.id.convertFrom);
-        convertTo = (TextView) findViewById(R.id.convertTo);
         value  = getResources().getStringArray(R.array.value);
 
+        textElement.setVisibility(TextView.INVISIBLE);
+        infoButton=(ImageView) findViewById(R.id.imageViewInfoButton);
 
         //
         //using spinner
@@ -79,13 +79,20 @@ public class MainActivity extends AppCompatActivity {
         spinnerTo.setAdapter(adapter);
         spinnerTo.setOnItemSelectedListener(new mySpinnerListener(2));
 
+        //set the default for spinner according to value
+        String myString = "US Dollar"; //the value you want the position for
+        ArrayAdapter myAdap = (ArrayAdapter) spinnerFrom.getAdapter(); //cast to an ArrayAdapter
+        int spinnerPosition = myAdap.getPosition(myString);
+        spinnerFrom.setSelection(spinnerPosition);
+        //
 
 
 
 
 
 
-        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+        //this was for edit text keyboard to go down
+        //getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
 
 
        /* FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -103,11 +110,8 @@ public class MainActivity extends AppCompatActivity {
     // function for Convert Button
     public void myClickHandler(View view) {
         textElementResult.setText("Loading ...");
-        InputMethodManager inputMethodManager= (InputMethodManager)
-                getSystemService(Context.INPUT_METHOD_SERVICE);
-        inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(),InputMethodManager.HIDE_NOT_ALWAYS);
         String currencyFrom = value[from];      //convertFrom.getText().toString();
-        String currencyTo = value[to];          //.getText().toString();
+        String currencyTo = value[to];//.getText().toString();
         String stringUrl = "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20yahoo.finance.xchange%20where%20pair%20in%20%28%22"+currencyFrom+currencyTo+"%22%29&format=json&diagnostics=true&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys&callback=";
         ConnectivityManager connMgr = (ConnectivityManager)
                 getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -118,12 +122,16 @@ public class MainActivity extends AppCompatActivity {
             Snackbar.make(view, "n/w available", Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show();
         } else {
-            textElement.setText("No network connection available.");
+            textElementResult.setText("No network connection available.");
         }
     }
 
     //AsynchronousT
     private class DownloadWebpageTask extends AsyncTask<String, Void, String> {
+
+        protected void onPreExecute() {
+
+        }
 
         @Override
         protected String doInBackground(String... urls) {
@@ -147,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
                 JSONObject resultsObj= queryObj.getJSONObject(RESULTSTAG);
                 JSONObject rateObj= resultsObj.getJSONObject(RATETAG);
                 ExchangeRate = rateObj.getDouble("Rate");
-                textElementResult.setText(ExchangeRate.toString());
+                textElementResult.setText(getResources().getString(R.string.resultStatement)+" "+ExchangeRate.toString());
 
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -202,12 +210,17 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
-
     public void infoButtonPressed(View view) {
-        textElement.setText("info button pressed");
+        if (textElement.getVisibility() == TextView.VISIBLE) {
+            // Its visible
+            textElement.setVisibility(TextView.INVISIBLE);
+        } else {
+            // Either gone or invisible
+            textElement.setVisibility(TextView.VISIBLE);
+        }
 
     }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -241,15 +254,12 @@ public class MainActivity extends AppCompatActivity {
         public void onItemSelected(AdapterView parent, View v, int position,
                                    long id) {
             // TODO Auto-generated method stub
-            Toast.makeText(parent.getContext(),
-                    parent.getItemAtPosition(position).toString(), Toast.LENGTH_LONG).show();
-            String[] tab_names = getResources().getStringArray(R.array.value);
-            String currencyCode=tab_names[0];
             if(ide == 1)
                 from = position;
             else if(ide == 2)
                 to = position;
-            textElementResult.setText("Loading ..."+ value[from]+value[to]);
+            //for testing
+            //textElementResult.setText("Loading ..."+ value[from]+value[to]);
         }
 
         @Override
@@ -262,3 +272,8 @@ public class MainActivity extends AppCompatActivity {
 
 
 }
+
+
+        /*Toast.makeText(parent.getContext(),
+                parent.getItemAtPosition(position).toString(), Toast.LENGTH_LONG).show();
+        */
